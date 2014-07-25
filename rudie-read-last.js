@@ -26,7 +26,7 @@
 
 		// OPTIONAL //
 		menuSelector: '.yt-uix-button-menu',
-		menuHTML: '<ul><li class="rudies-menu-item" role="menuitem"><span class="yt-uix-button-menu-item">Mark this & older as READ</span></li></ul>', // Only the first element matching `.rudies-menu-item` will be used
+		menuHTML: '<ul><li class="rudie-read-it-menu-item" role="menuitem"><span class="yt-uix-button-menu-item">Mark this & older as READ</span></li></ul>', // Only the first element matching `.rudie-read-it-menu-item` will be used
 		onMenuClick: function(e) { // OPTIONAL, executed last, inside the event callback
 			// Click the body to hide the menu popup
 			document.body.click();
@@ -66,9 +66,9 @@
 console.debug('_init');
 		if ( !cfg.active() ) return;
 
-		_mark();
 		_button();
 		_listen();
+		_mark();
 	}
 
 	function _ancestor(el, sel) {
@@ -134,12 +134,12 @@ console.debug('_menu');
 		if ( !cfg.menuSelector ) return;
 
 		[].forEach.call(document.querySelectorAll(cfg.fullItemSelector + ' ' + cfg.menuSelector), function(menu) {
-			if ( menu.classList.contains('rudie-added-menu-items') ) return;
-			menu.classList.add('rudie-added-menu-items');
+			if ( menu.classList.contains('rudie-read-it-menu-items-added') ) return;
+			menu.classList.add('rudie-read-it-menu-items-added');
 
 			var frag = document.createElement('div');
 			frag.innerHTML = cfg.menuHTML;
-			var menuItem = frag.querySelector('.rudies-menu-item');
+			var menuItem = frag.querySelector('.rudie-read-it-menu-item');
 			menuItem.onclick = function(e) {
 				e.preventDefault();
 				e.stopPropagation();
