@@ -31,6 +31,7 @@
 			// Click the body to hide the menu popup
 			document.body.click();
 		},
+		menuItemPosition: 0, // 0 is first, 1 is second etc
 	};
 	/**/
 
@@ -142,14 +143,20 @@ console.debug('_menu');
 			var menuItem = frag.querySelector('.rudie-read-it-menu-item');
 			menuItem.onclick = function(e) {
 				e.preventDefault();
-				e.stopPropagation();
 
 				var item = _ancestor(this, cfg.itemSelector);
 				_save(item);
 
 				cfg.onMenuClick && cfg.onMenuClick.call(this, e);
 			};
-			menu.appendChild(menuItem);
+
+			var items = menu.children;
+			if ( cfg.menuItemPosition == null || cfg.menuItemPosition >= items.length ) {
+				menu.appendChild(menuItem);
+			}
+			else {
+				menu.insertBefore(menuItem, items[cfg.menuItemPosition]);
+			}
 		});
 	}
 
