@@ -95,10 +95,6 @@ console.debug('_init');
 
 	function _get() {
 console.debug('_get');
-		// debug //
-		try {
-		// debug //
-
 		_ajax(cfg.storeURL + '?' + cfg.storeQuery + '&get=' + encodeURIComponent(cfg.name) + '.lastread', 'get', function(rsp, e) {
 			if ( rsp.error || !rsp.exists ) {
 				return;
@@ -116,12 +112,6 @@ console.debug('_get');
 				item.classList.add('rudie-read-it');
 			});
 		});
-
-		// debug //
-		} catch (ex) {
-			console.log(ex);
-		}
-		// debug //
 	}
 
 	function _mark() {
