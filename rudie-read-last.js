@@ -169,8 +169,13 @@ console.debug('_save');
 			return item.getAttribute(cfg.idAttribute);
 		});
 
+		var button = document.querySelector('.rudie-read-it-button');
+		button.classList.add('loading');
+
 		_ajax(cfg.storeURL + '?' + cfg.storeQuery, 'post', function(rsp, e) {
 			console.log('SAVED LAST READ', rsp);
+
+			button.classList.remove('loading');
 		}, 'put=' + cfg.name + '.lastread&value=' + encodeURIComponent(JSON.stringify(lastRead)));
 	}
 
