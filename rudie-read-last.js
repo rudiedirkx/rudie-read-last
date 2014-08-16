@@ -32,6 +32,10 @@
 			document.body.click();
 		},
 		menuItemPosition: 0, // 0 is first, 1 is second etc
+
+		init: function(cfg) {
+			cfg._list.classList.add('i-be-inited');
+		}
 	};
 	/**/
 
@@ -70,6 +74,8 @@ console.debug('_init');
 		_button();
 		_listen();
 		_mark();
+
+		cfg.init && cfg.init(cfg);
 	}
 
 	function _ancestor(el, sel) {
@@ -203,13 +209,21 @@ console.debug('_button');
 
 	function _listen() {
 console.debug('_listen');
-		var list = document.querySelector(cfg.listSelector);
+		cfg._list = document.querySelector(cfg.listSelector);
 		var mo = new MutationObserver(function(muts) {
 			if ( muts[0].addedNodes[0].matches(cfg.itemSelector) ) {
+				// Wait a while, until the host is definitely done painting
 				setTimeout(_mark, 100);
+
+				// Immediately, but not directly, to unblock the MutationObserver
+				setTimeout(function() {
+					var e = new Event('rudiesReadListMutate');
+					e.addedNodes = muts[0].addedNodes;
+					cfg._list.dispatchEvent(e);
+				}, 1);
 			}
 		});
-		mo.observe(list, {childList: true});
+		mo.observe(cfg._list, {childList: true});
 	}
 
 })();
