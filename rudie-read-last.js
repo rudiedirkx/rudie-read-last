@@ -14,8 +14,10 @@
 		store: 'mine',
 		// storePassword: 'mine', // OPTIONAL, depends on Objective db
 
-		// redundancy: 4, // OPTIONAL, default = 4
+		// OPTIONAL //
+		redundancy: 4, // default = 4
 
+		// OPTIONAL //
 		headerSelector: '.feed-header',
 		appendButtonBefore: true, // true = first, false = last (default), <selector> = before that
 
@@ -42,7 +44,7 @@
 
 	// Check required config
 	var fail = [];
-	(['name', 'store', 'headerSelector', 'appendButtonBefore', 'listSelector', 'itemSelector', 'idAttribute']).forEach(function(name) {
+	(['name', 'store', 'listSelector', 'itemSelector', 'idAttribute']).forEach(function(name) {
 		if ( !(name in cfg) ) {
 			fail.push('Config "' + name + '" is required.');
 		}
@@ -188,6 +190,8 @@ console.debug('_save');
 
 	function _button() {
 console.debug('_button');
+		if ( !cfg.headerSelector ) return;
+
 		var header = document.querySelector(cfg.headerSelector);
 		var button = document.createElement('button');
 		button.textContent = 'Mark all READ';
