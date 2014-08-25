@@ -23,6 +23,7 @@
 		itemSelector: '.feed-item-container',
 		// idItemSelector: '[data-context-item-id]', // OPTIONAL, use itemSelector by default
 		idAttribute: 'data-context-item-id',
+		subtree: false, // whether to listen for new nodes all the way down inside the listSelector
 
 		// OPTIONAL //
 		menuSelector: '.yt-uix-button-menu',
@@ -31,7 +32,7 @@
 			// Click the body to hide the menu popup
 			document.body.click();
 		},
-		menuItemPosition: 0, // 0 is first, 1 is second etc
+		menuItemPosition: 0, // 0 is first, 1 is second etc -- if omitted, will add to the end
 
 		init: function(cfg) {
 			cfg._list.classList.add('i-be-inited');
@@ -211,9 +212,21 @@ console.debug('_button');
 console.debug('_listen');
 		cfg._list = document.querySelector(cfg.listSelector);
 		var mo = new MutationObserver(function(muts) {
-			if ( muts[0].addedNodes[0].matches(cfg.itemSelector) ) {
+			var match = false;
+			for ( var j=0; j<muts.length; j++ ) {
+				var mut = muts[j];
+				for ( var i=0; i<mut.addedNodes.length; i++ ) {
+					var node = mut.addedNodes[i];
+					if ( node.matches && (node.matches(cfg.itemSelector) || node.querySelector(cfg.itemSelector)) ) {
+						match = true;
+						break;
+					}
+				}
+			}
+
+			if ( match ) {
 				// Wait a while, until the host is definitely done painting
-				setTimeout(_mark, 100);
+				setTimeout(_mark, 1);
 
 				// Immediately, but not directly, to unblock the MutationObserver
 				setTimeout(function() {
@@ -223,7 +236,7 @@ console.debug('_listen');
 				}, 1);
 			}
 		});
-		mo.observe(cfg._list, {childList: true});
+		mo.observe(cfg._list, {childList: true, subtree: !!cfg.subtree});
 	}
 
 })();
