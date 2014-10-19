@@ -30,15 +30,17 @@
 		// OPTIONAL //
 		menuSelector: '.yt-uix-button-menu',
 		menuHTML: '<ul><li class="rudie-read-it-menu-item" role="menuitem"><span class="yt-uix-button-menu-item">Mark this & older as READ</span></li></ul>', // Only the first element matching `.rudie-read-it-menu-item` will be used
-		onMenuClick: function(e) { // OPTIONAL, executed last, inside the event callback
-			// Click the body to hide the menu popup
-			document.body.click();
-		},
 		menuItemPosition: 0, // 0 is first, 1 is second etc -- if omitted, will add to the end
 
-		init: function(cfg) {
-			cfg._list.classList.add('i-be-inited');
-		}
+		// Events
+		on: {
+			init: Function, // AFTER init (after menu & mark)
+			menu: Function, // AFTER adding menu items
+			mark: Function, // AFTER marking items as read
+			listen: Function, // when the site loads more items
+			menuClick: Function, // AFTER handing menu item click (after sending save)
+			save: Function, // when receiving save response
+		},
 	};
 	/**/
 
@@ -68,6 +70,9 @@
 	cfg.storePassword && (cfg.storeQuery += '&password='+ encodeURIComponent(cfg.storePassword));
 	cfg.fullItemSelector = cfg.listSelector + ' ' + cfg.itemSelector;
 
+	// Events
+	cfg.on || (cfg.on = {});
+
 	_init();
 
 	function _init() {
@@ -78,7 +83,7 @@ console.debug('_init');
 		_listen();
 		_mark();
 
-		cfg.init && cfg.init(cfg);
+		_invoke('init');
 	}
 
 	function _ancestor(el, sel) {
@@ -102,6 +107,16 @@ console.debug('_init');
 		xhr.send(data);
 	}
 
+	function _invoke(event, arg2) {
+		if (cfg.on[event]) {
+			cfg.on[event] instanceof Array || (cfg.on[event] = [cfg.on[event]]);
+
+			cfg.on[event].forEach(function(handler) {
+				handler(cfg, arg2);
+			});
+		}
+	}
+
 	function _get() {
 console.debug('_get');
 		_ajax(cfg.storeURL + '?' + cfg.storeQuery + '&get=' + encodeURIComponent(cfg.name) + '.lastread', 'get', function(rsp, e) {
@@ -120,6 +135,8 @@ console.debug('_get');
 				}
 				item.classList.add('rudie-read-it');
 			});
+
+			_invoke('mark', rsp.value);
 		});
 	}
 
@@ -146,7 +163,8 @@ console.debug('_menu');
 				var item = _ancestor(this, cfg.itemSelector);
 				_save(item);
 
-				cfg.onMenuClick && cfg.onMenuClick.call(this, e);
+				e.self = this;
+				_invoke('menuClick', e);
 			};
 
 			var items = menu.children;
@@ -156,6 +174,8 @@ console.debug('_menu');
 			else {
 				menu.insertBefore(menuItem, items[cfg.menuItemPosition]);
 			}
+
+			_invoke('menu', menu);
 		});
 	}
 
@@ -181,11 +201,15 @@ console.debug('_save');
 		var button = document.querySelector('.rudie-read-it-button');
 		button.classList.add('loading');
 
+		console.time('SAVED LAST READ');
 		_ajax(cfg.storeURL + '?' + cfg.storeQuery, 'post', function(rsp, e) {
-			console.log('SAVED LAST READ', rsp);
+			console.timeEnd('SAVED LAST READ');
+			console.debug('SAVED LAST READ', rsp);
 
 			button.classList.remove('loading');
 		}, 'put=' + cfg.name + '.lastread&value=' + encodeURIComponent(JSON.stringify(lastRead)));
+
+		_invoke('save', readItems);
 	}
 
 	function _button() {
@@ -222,22 +246,17 @@ console.debug('_listen');
 				for ( var i=0; i<mut.addedNodes.length; i++ ) {
 					var node = mut.addedNodes[i];
 					if ( node.matches && (node.matches(cfg.itemSelector) || node.querySelector(cfg.itemSelector)) ) {
-						match = true;
+						match = mut.addedNodes;
 						break;
 					}
 				}
 			}
 
+			_invoke('listen', match);
+
 			if ( match ) {
 				// Wait a while, until the host is definitely done painting
 				setTimeout(_mark, 1);
-
-				// Immediately, but not directly, to unblock the MutationObserver
-				setTimeout(function() {
-					var e = new Event('rudiesReadListMutate');
-					e.addedNodes = muts[0].addedNodes;
-					cfg._list.dispatchEvent(e);
-				}, 1);
 			}
 		});
 		mo.observe(cfg._list, {childList: true, subtree: !!cfg.subtree});
