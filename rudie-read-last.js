@@ -35,6 +35,7 @@
 		// Events
 		on: {
 			init: Function, // AFTER init (after menu & mark)
+			button: Function, // AFTER adding the read-all button
 			menu: Function, // AFTER adding menu items
 			mark: Function, // AFTER marking items as read
 			listen: Function, // when the site loads more items
@@ -136,7 +137,10 @@ console.debug('_get');
 				item.classList.add('rudie-read-it');
 			});
 
-			_invoke('mark', rsp.value);
+			_invoke('mark', {
+				rsp: rsp.value,
+				items: items,
+			});
 		});
 	}
 
@@ -234,6 +238,9 @@ console.debug('_button');
 		else {
 			header.appendChild(button);
 		}
+
+		cfg._button = button;
+		_invoke('button', button);
 	}
 
 	function _listen() {
