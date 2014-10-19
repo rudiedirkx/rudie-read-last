@@ -84,6 +84,9 @@ console.debug('_init');
 		_listen();
 		_mark();
 
+		// Expose some?
+		cfg.save = _save;
+
 		_invoke('init');
 	}
 
@@ -183,7 +186,7 @@ console.debug('_menu');
 		});
 	}
 
-	function _save(lastReadItem) {
+	function _save(lastReadItem, callback) {
 console.debug('_save');
 		var items = [].slice.call(document.querySelectorAll(cfg.fullItemSelector));
 		lastReadItem || (lastReadItem = items[0]);
@@ -211,9 +214,10 @@ console.debug('_save');
 			console.debug('SAVED LAST READ', rsp);
 
 			button.classList.remove('loading');
-		}, 'put=' + cfg.name + '.lastread&value=' + encodeURIComponent(JSON.stringify(lastRead)));
 
-		_invoke('save', readItems);
+			_invoke('save', readItems);
+			callback && callback(cfg, readItems);
+		}, 'put=' + cfg.name + '.lastread&value=' + encodeURIComponent(JSON.stringify(lastRead)));
 	}
 
 	function _button() {
