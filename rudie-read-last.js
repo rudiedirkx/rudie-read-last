@@ -63,7 +63,8 @@
 
 	// Append optional config
 	cfg.active || (cfg.active = function() {
-		return !!document.querySelector(this.listSelector);
+		var el = document.querySelector(this.listSelector);
+		return el && (el.offsetHeight || el.offsetWidth);
 	});
 	cfg.redundancy || (cfg.redundancy = 4);
 
