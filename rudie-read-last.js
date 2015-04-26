@@ -70,7 +70,6 @@
 
 	cfg.storeQuery = 'store=' + encodeURIComponent(cfg.store);
 	cfg.storePassword && (cfg.storeQuery += '&password='+ encodeURIComponent(cfg.storePassword));
-	cfg.fullItemSelector = cfg.listSelector + ' ' + cfg.itemSelector;
 
 	// Events
 	cfg.on || (cfg.on = {});
@@ -158,7 +157,7 @@ console.debug('_mark');
 console.debug('_menu');
 		if ( !cfg.menuSelector ) return;
 
-		[].forEach.call(document.querySelectorAll(cfg.fullItemSelector + ' ' + cfg.menuSelector), function(menu) {
+		[].forEach.call(document.querySelectorAll(cfg.itemSelector + ' ' + cfg.menuSelector), function(menu) {
 			if ( menu.classList.contains('rudie-read-it-menu-items-added') ) return;
 			menu.classList.add('rudie-read-it-menu-items-added');
 
@@ -189,7 +188,7 @@ console.debug('_menu');
 
 	function _save(lastReadItem, callback) {
 console.debug('_save');
-		var items = [].slice.call(document.querySelectorAll(cfg.fullItemSelector));
+		var items = [].slice.call(document.querySelectorAll(cfg.itemSelector));
 		lastReadItem || (lastReadItem = items[0]);
 
 		[].forEach.call(document.querySelectorAll('.rudie-read-it'), function(el) {
