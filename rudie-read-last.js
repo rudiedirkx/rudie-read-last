@@ -133,9 +133,9 @@ console.debug('_get');
 				return cfg.listSelector + ' ' + itemSelector + '[' + cfg.idAttribute + '="' + id + '"]';
 			}).join(', ');
 			var items = document.querySelectorAll(selector);
-			[].forEach.call(items, function(item) {
+			[].forEach.call(items, function(item, i) {
 				if ( cfg.idItemSelector ) {
-					item = _ancestor(item, cfg.itemSelector);
+					item = items[i] = _ancestor(item, cfg.itemSelector);
 				}
 				item.classList.add('rudie-read-it');
 			});
@@ -215,7 +215,10 @@ console.debug('_save');
 
 			button.classList.remove('loading');
 
-			_invoke('save', readItems);
+			_invoke('save', {
+				rsp: rsp.value,
+				items: readItems,
+			});
 			callback && callback(cfg, readItems);
 		}, 'put=' + cfg.name + '.lastread&value=' + encodeURIComponent(JSON.stringify(lastRead)));
 	}
