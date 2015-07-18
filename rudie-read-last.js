@@ -132,8 +132,9 @@ console.debug('_get');
 			var selector = rsp.value.map(function(id) {
 				return cfg.listSelector + ' ' + itemSelector + '[' + cfg.idAttribute + '="' + id + '"]';
 			}).join(', ');
-			var items = document.querySelectorAll(selector);
-			[].forEach.call(items, function(item, i) {
+
+			var items = [].slice.call(document.querySelectorAll(selector));
+			items.forEach(function(item, i) {
 				if ( cfg.idItemSelector ) {
 					item = items[i] = _ancestor(item, cfg.itemSelector);
 				}
