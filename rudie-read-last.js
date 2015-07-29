@@ -189,7 +189,7 @@ console.debug('_menu');
 
 	function _save(lastReadItem, callback) {
 console.debug('_save');
-		var items = [].slice.call(document.querySelectorAll(cfg.itemSelector));
+		var items = [].slice.call(cfg._list.querySelectorAll(cfg.itemSelector));
 		lastReadItem || (lastReadItem = items[0]);
 
 		[].forEach.call(document.querySelectorAll('.rudie-read-it'), function(el) {
