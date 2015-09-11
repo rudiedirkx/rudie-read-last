@@ -12,7 +12,6 @@
 		storeURL: '//example.com/store/',
 		name: 'youtube',
 		store: 'mine',
-		// storePassword: 'mine', // OPTIONAL, depends on Objective db
 
 		// OPTIONAL //
 		redundancy: 4, // default = 4
@@ -69,7 +68,6 @@
 	cfg.redundancy || (cfg.redundancy = 4);
 
 	cfg.storeQuery = 'store=' + encodeURIComponent(cfg.store);
-	cfg.storePassword && (cfg.storeQuery += '&password='+ encodeURIComponent(cfg.storePassword));
 
 	// Events
 	cfg.on || (cfg.on = {});
@@ -103,8 +101,13 @@ console.debug('_init');
 		var xhr = new XMLHttpRequest;
 		xhr.open(method, url, true);
 		xhr.onload = function(e) {
-			var rsp = this.responseText;
-			try { rsp = JSON.parse(rsp); } catch (ex) {}
+			var rsp = this.responseText.substr(this.getResponseHeader('X-anti-hijack'));
+			try {
+				rsp = JSON.parse(rsp);
+			}
+			catch (ex) {
+				return console.error('JSON error from Objective!', ex.message, rsp);
+			}
 			callback.call(this, rsp, e);
 		};
 		data && xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
