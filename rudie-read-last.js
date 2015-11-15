@@ -210,14 +210,14 @@ console.debug('_save');
 		});
 
 		var button = document.querySelector('.rudie-read-it-button');
-		button.classList.add('loading');
+		button && button.classList.add('loading');
 
 		console.time('SAVED LAST READ');
 		_ajax(cfg.storeURL + '?' + cfg.storeQuery, 'post', function(rsp, e) {
 			console.timeEnd('SAVED LAST READ');
 			console.debug('SAVED LAST READ', rsp);
 
-			button.classList.remove('loading');
+			button && button.classList.remove('loading');
 
 			_invoke('save', {
 				rsp: rsp.value,
