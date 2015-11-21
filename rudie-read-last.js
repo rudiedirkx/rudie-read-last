@@ -22,6 +22,7 @@
 
 		listSelector: '.individual-feed[data-feed-name="subscriptions"] #browse-items-primary',
 		addListClass: 'rudie-read-it-list', // OPTIONAL, this is default
+		addPageBreakClass: 'rudie-read-it-page-break', // OPTIONAL, this is default
 		itemSelector: '.feed-item-container',
 		idItemSelector: '[data-context-item-id]', // OPTIONAL, uses itemSelector by default
 		idAttribute: 'data-context-item-id',
@@ -68,6 +69,7 @@
 	});
 	cfg.redundancy || (cfg.redundancy = 4);
 	cfg.addListClass == null && (cfg.addListClass = 'rudie-read-it-list');
+	cfg.addPageBreakClass == null && (cfg.addPageBreakClass = 'rudie-read-it-page-break');
 
 	cfg.storeQuery = 'store=' + encodeURIComponent(cfg.store);
 
@@ -259,7 +261,6 @@ console.debug('_button');
 	function _listen() {
 console.debug('_listen');
 		cfg._list = document.querySelector(cfg.listSelector);
-		cfg.addListClass && cfg._list.classList.add(cfg.addListClass);
 		var mo = new MutationObserver(function(muts) {
 			var match = false;
 			for ( var j=0; j<muts.length; j++ ) {
@@ -276,11 +277,26 @@ console.debug('_listen');
 			_invoke('listen', match);
 
 			if ( match ) {
+				_breakPage();
+
 				// Wait a while, until the host is definitely done painting
 				setTimeout(_mark, 1);
 			}
 		});
 		mo.observe(cfg._list, {childList: true, subtree: !!cfg.subtree});
+
+		if ( cfg.addListClass ) {
+			cfg._list.classList.add(cfg.addListClass);
+		}
+
+		_breakPage();
+	}
+
+	function _breakPage() {
+		if ( cfg.addPageBreakClass ) {
+			var items = [].slice.call(cfg._list.querySelectorAll(cfg.itemSelector));
+			items[items.length-1].classList.add(cfg.addPageBreakClass);
+		}
 	}
 
 })();
