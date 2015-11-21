@@ -21,8 +21,9 @@
 		appendButtonBefore: true, // true = first, false = last (default), <selector> = before that
 
 		listSelector: '.individual-feed[data-feed-name="subscriptions"] #browse-items-primary',
+		addListClass: 'rudie-read-it-list', // OPTIONAL, this is default
 		itemSelector: '.feed-item-container',
-		// idItemSelector: '[data-context-item-id]', // OPTIONAL, use itemSelector by default
+		idItemSelector: '[data-context-item-id]', // OPTIONAL, uses itemSelector by default
 		idAttribute: 'data-context-item-id',
 		subtree: false, // whether to listen for new nodes all the way down inside the listSelector
 
@@ -66,6 +67,7 @@
 		return el && (el.offsetHeight || el.offsetWidth);
 	});
 	cfg.redundancy || (cfg.redundancy = 4);
+	cfg.addListClass == null && (cfg.addListClass = 'rudie-read-it-list');
 
 	cfg.storeQuery = 'store=' + encodeURIComponent(cfg.store);
 
@@ -257,6 +259,7 @@ console.debug('_button');
 	function _listen() {
 console.debug('_listen');
 		cfg._list = document.querySelector(cfg.listSelector);
+		cfg.addListClass && cfg._list.classList.add(cfg.addListClass);
 		var mo = new MutationObserver(function(muts) {
 			var match = false;
 			for ( var j=0; j<muts.length; j++ ) {
