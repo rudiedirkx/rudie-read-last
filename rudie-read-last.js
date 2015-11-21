@@ -137,7 +137,7 @@ console.debug('_get');
 
 			var itemSelector = cfg.idItemSelector || cfg.itemSelector;
 			var selector = rsp.value.map(function(id) {
-				return cfg.listSelector + ' ' + itemSelector + '[' + cfg.idAttribute + '="' + id + '"]';
+				return itemSelector + '[' + cfg.idAttribute + '="' + id + '"]';
 			}).join(', ');
 
 			var items = [].slice.call(document.querySelectorAll(selector));
@@ -165,7 +165,7 @@ console.debug('_mark');
 console.debug('_menu');
 		if ( !cfg.menuSelector ) return;
 
-		[].forEach.call(document.querySelectorAll(cfg.itemSelector + ' ' + cfg.menuSelector), function(menu) {
+		[].forEach.call(document.querySelectorAll(cfg.menuSelector), function(menu) {
 			if ( menu.classList.contains('rudie-read-it-menu-items-added') ) return;
 			menu.classList.add('rudie-read-it-menu-items-added');
 
@@ -267,7 +267,7 @@ console.debug('_listen');
 				var mut = muts[j];
 				for ( var i=0; i<mut.addedNodes.length; i++ ) {
 					var node = mut.addedNodes[i];
-					if ( node.matches && (node.matches(cfg.itemSelector) || node.querySelector(cfg.itemSelector)) ) {
+					if ( node.matches(cfg.itemSelector) || node.querySelector(cfg.itemSelector) ) {
 						match = mut.addedNodes;
 						break;
 					}
