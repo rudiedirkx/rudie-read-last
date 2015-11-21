@@ -48,8 +48,8 @@
 
 	// Check required config
 	var fail = [];
-	(['name', 'store', 'listSelector', 'itemSelector', 'idAttribute']).forEach(function(name) {
-		if ( !(name in cfg) ) {
+	(['storeURL', 'name', 'store', 'listSelector', 'itemSelector', 'idAttribute']).forEach(function(name) {
+		if ( !cfg[name] ) {
 			fail.push('Config "' + name + '" is required.');
 		}
 	});
