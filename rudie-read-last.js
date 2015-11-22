@@ -9,53 +9,73 @@
 
 	/**
 	cfg = {
-		storeURL: '//example.com/store/',
-		name: 'youtube',
+		storeURL: '//store.example.com/index.php',
 		store: 'mine',
 
-		// OPTIONAL //
-		redundancy: 4, // default = 4
+		listSelector: 'ul.content',
+		itemSelector: 'ul.content li',
+		idItemSelector: 'ul.content li h3', // OPTIONAL, default is `itemSelector`
+		idAttribute: 'data-id',
+		subtree: false, // OPTIONAL
 
-		// OPTIONAL //
-		headerSelector: '.feed-header',
-		appendButtonBefore: true, // true = first, false = last (default), <selector> = before that
+		addListClass: 'rudie-read-it-list', // OPTIONAL
+		addPageBreakClass: 'rudie-read-it-page-break', // OPTIONAL
 
-		listSelector: '.individual-feed[data-feed-name="subscriptions"] #browse-items-primary',
-		addListClass: 'rudie-read-it-list', // OPTIONAL, this is default
-		addPageBreakClass: 'rudie-read-it-page-break', // OPTIONAL, this is default
-		itemSelector: '.feed-item-container',
-		idItemSelector: '[data-context-item-id]', // OPTIONAL, uses itemSelector by default
-		idAttribute: 'data-context-item-id',
-		subtree: false, // whether to listen for new nodes all the way down inside the listSelector
-
-		// OPTIONAL //
-		menuSelector: '.yt-uix-button-menu',
-		menuHTML: '<ul><li class="rudie-read-it-menu-item" role="menuitem"><span class="yt-uix-button-menu-item">Mark this & older as READ</span></li></ul>', // Only the first element matching `.rudie-read-it-menu-item` will be used
-		menuItemPosition: 0, // 0 is first, 1 is second etc -- if omitted, will add to the end
+		trackers: [
+			{
+				name: 'lastread.seen',
+				className: 'seen',
+				redundancy: 4,
+				appendTo: 'ul.content li', // Menu item, because `html`
+				html: '<button class="rudie-read-it-menu-item seen">..</button>',
+				position: 999, // OPTIONAL, 0 = first, 1 = second, etc, 999 = last
+				all: {
+					appendTo: 'h1',
+					html: '<button class="rudie-read-it-all-menu-item">Mark ALL read</button>',
+				},
+			},
+			{
+				name: 'lastread.hilite',
+				className: 'hilited',
+				redundancy: 0,
+				appendTo: 'ul.content li', // Clickable, because `notParents`
+				notParents: 'a, button',
+			},
+		]
 
 		// Events
 		on: {
-			init: Function, // AFTER init (after menu & mark)
-			button: Function, // AFTER adding the read-all button
-			menu: Function, // AFTER adding menu items
-			mark: Function, // AFTER marking items as read
-			listen: Function, // when the site loads more items
-			menuClick: Function, // AFTER handing menu item click (after sending save)
-			save: Function, // when receiving save response
+			init: Function(cfg),   // AFTER init (after menu & mark)
+			mark: Function(cfg, {tracker, rsp, items}),   // AFTER marking items as read
+			menu: Function(cfg, {tracker, menu}),   // AFTER adding menu items
+			menuClick: Function(cfg, {tracker, item}),   // AFTER handing menu item click (after sending save)
+			save: Function(cfg, {tracker, rsp, items}),   // when receiving save response
+			button: Function(cfg, {tracker, button}),   // AFTER adding a read-all button
+			buttons: Function(cfg, {buttons}),   // AFTER adding all read-all buttons
+			listen: Function(cfg, {match}),   // when the site loads more items
 		},
 	};
 	/**/
 
 	// Check required config
 	var fail = [];
-	(['storeURL', 'name', 'store', 'listSelector', 'itemSelector', 'idAttribute']).forEach(function(name) {
-		if ( !cfg[name] ) {
+	(['storeURL', 'store', 'listSelector', 'itemSelector', 'idAttribute', 'trackers']).forEach(function(name) {
+		if ( cfg[name] == null ) {
 			fail.push('Config "' + name + '" is required.');
 		}
 	});
-	if ( cfg.menuSelector && !cfg.menuHTML ) {
-		fail.push('If you set a "menuSelector", you must set "menuHTML".');
-	}
+
+	cfg.trackers.forEach(function(tracker) {
+		(['name', 'className', 'appendTo', 'redundancy']).forEach(function(name) {
+			if ( tracker[name] == null ) {
+				fail.push('Config "tracker[' + name + ']" is required.');
+			}
+		});
+
+		if ( tracker.redundancy == 0 && tracker.all ) {
+			fail.push("Per-item trackers can't have an 'all' button.");
+		}
+	});
 
 	if ( fail.length ) {
 		alert('Invalid RUDIE-LAST-READ config:\n\n* ' + fail.join('\n* '));
@@ -82,7 +102,7 @@
 console.debug('_init');
 		if ( !cfg.active() ) return;
 
-		_button();
+		_allButtons();
 		_listen();
 		_mark();
 
@@ -92,14 +112,23 @@ console.debug('_init');
 		_invoke('init');
 	}
 
-	function _ancestor(el, sel) {
+	function _closest(el, sel) {
 		while ( el.parentNode && el != document.documentElement ) {
-			el = el.parentNode;
 			if ( el.matches(sel) ) {
 				return el;
 			}
+			el = el.parentNode;
 		}
 	}
+
+	// function _data(data) {
+	// 	var query = [];
+	// 	for ( var name in data ) {
+	// 		var value = data[name];
+	// 		query.push(encodeURIComponent(name) + '=' + encodeURIComponent(value));
+	// 	}
+	// 	return query.join('&');
+	// }
 
 	function _ajax(url, method, callback, data) {
 		var xhr = new XMLHttpRequest;
@@ -128,9 +157,18 @@ console.debug('_init');
 		}
 	}
 
-	function _get() {
-console.debug('_get');
-		_ajax(cfg.storeURL + '?' + cfg.storeQuery + '&get=' + encodeURIComponent(cfg.name) + '.lastread', 'get', function(rsp, e) {
+	function _mark() {
+console.debug('_mark');
+		cfg.trackers.forEach(function(tracker) {
+			_get(tracker);
+			_menu(tracker);
+		});
+	}
+
+	function _get(tracker) {
+console.debug('_get[' + tracker.name + ']');
+		_ajax(cfg.storeURL + '?' + cfg.storeQuery + '&get=' + encodeURIComponent(tracker.name), 'get', function(rsp, e) {
+console.debug('rsp', rsp);
 			if ( rsp.error || !rsp.exists ) {
 				return;
 			}
@@ -143,104 +181,145 @@ console.debug('_get');
 			var items = [].slice.call(document.querySelectorAll(selector));
 			items.forEach(function(item, i) {
 				if ( cfg.idItemSelector ) {
-					item = items[i] = _ancestor(item, cfg.itemSelector);
+					item = items[i] = _closest(item, cfg.itemSelector);
 				}
 				item.classList.add('rudie-read-it');
+				item.classList.add(tracker.className);
 			});
 
 			_invoke('mark', {
+				tracker: tracker,
 				rsp: rsp.value,
 				items: items,
 			});
 		});
 	}
 
-	function _mark() {
-console.debug('_mark');
-		_get();
-		_menu();
-	}
+	function _menu(tracker) {
+		if ( !tracker.appendTo ) return;
+console.debug('_menu[' + tracker.name + ']');
 
-	function _menu() {
-console.debug('_menu');
-		if ( !cfg.menuSelector ) return;
+		function __save(item) {
+			_save(tracker, item);
+			_invoke('menuClick', {
+				tracker: tracker,
+				item: item,
+			});
+		}
 
-		[].forEach.call(document.querySelectorAll(cfg.menuSelector), function(menu) {
-			if ( menu.classList.contains('rudie-read-it-menu-items-added') ) return;
-			menu.classList.add('rudie-read-it-menu-items-added');
+		[].forEach.call(document.querySelectorAll(tracker.appendTo), function(menu) {
+			if ( menu.classList.contains('rudie-read-it-menu-items-added--' + tracker.className) ) return;
+			menu.classList.add('rudie-read-it-menu-items-added--' + tracker.className);
 
-			var frag = document.createElement('div');
-			frag.innerHTML = cfg.menuHTML;
-			var menuItem = frag.querySelector('.rudie-read-it-menu-item');
-			menuItem.onclick = function(e) {
-				e.preventDefault();
+			if ( tracker.html ) {
+				var frag = document.createElement('div');
+				frag.innerHTML = tracker.html;
+				var menuItem = frag.querySelector('.rudie-read-it-menu-item');
+				menuItem.onclick = function(e) {
+					e.preventDefault();
 
-				var item = _ancestor(this, cfg.itemSelector);
-				_save(item);
+					__save(_closest(this, cfg.itemSelector));
+				};
 
-				e.self = this;
-				_invoke('menuClick', e);
-			};
-
-			var items = menu.children;
-			if ( cfg.menuItemPosition == null || cfg.menuItemPosition >= items.length ) {
-				menu.appendChild(menuItem);
+				var items = menu.children;
+				if ( tracker.position == null || tracker.position >= items.length ) {
+					menu.appendChild(menuItem);
+				}
+				else {
+					menu.insertBefore(menuItem, items[tracker.position]);
+				}
 			}
 			else {
-				menu.insertBefore(menuItem, items[cfg.menuItemPosition]);
+				menu.addEventListener('click', function(e) {
+					e.preventDefault();
+
+					if ( !_closest(e.target, tracker.notParents) ) {
+						__save(_closest(this, cfg.itemSelector));
+					}
+				});
 			}
 
-			_invoke('menu', menu);
+			_invoke('menu', {
+				tracker: tracker,
+				menu: menu,
+			});
 		});
 	}
 
-	function _save(lastReadItem, callback) {
-console.debug('_save');
+	function _save(tracker, lastReadItem, callback) {
+console.debug('_save[' + tracker.name + ']');
 		var items = [].slice.call(cfg._list.querySelectorAll(cfg.itemSelector));
 		lastReadItem || (lastReadItem = items[0]);
 
-		[].forEach.call(document.querySelectorAll('.rudie-read-it'), function(el) {
-			el.classList.remove('rudie-read-it');
-		});
+// console.log(lastReadItem);
+// return;
 
-		var thisIndex = items.indexOf(lastReadItem);
-		var readItems = items.slice(thisIndex, thisIndex + cfg.redundancy);
-		var lastRead = readItems.map(function(item) {
+		function mapper(item) {
 			item.classList.add('rudie-read-it');
+			item.classList.toggle(tracker.className);
 			if ( cfg.idItemSelector ) {
 				item = item.querySelector(cfg.idItemSelector);
 			}
 			return item.getAttribute(cfg.idAttribute);
-		});
+		}
 
-		var button = document.querySelector('.rudie-read-it-button');
-		button && button.classList.add('loading');
+		// Overwrite previous list with new list
+		if ( tracker.redundancy > 0 ) {
+			[].forEach.call(document.querySelectorAll('.rudie-read-it.' + tracker.className), function(el) {
+				el.classList.remove(tracker.className);
+			});
+
+			var thisIndex = items.indexOf(lastReadItem);
+			var readItems = items.slice(thisIndex, thisIndex + tracker.redundancy);
+			var lastRead = readItems.map(mapper);
+			var method = 'put';
+		}
+
+		// Add/remove 1 item
+		else {
+			var readItems = [lastReadItem];
+			var lastRead = mapper(lastReadItem);
+			var method = lastReadItem.classList.contains(tracker.className) ? 'push' : 'pull';
+		}
+
+console.debug(method, lastRead);
 
 		console.time('SAVED LAST READ');
 		_ajax(cfg.storeURL + '?' + cfg.storeQuery, 'post', function(rsp, e) {
 			console.timeEnd('SAVED LAST READ');
 			console.debug('SAVED LAST READ', rsp);
 
-			button && button.classList.remove('loading');
-
 			_invoke('save', {
+				tracker: tracker,
 				rsp: rsp.value,
 				items: readItems,
 			});
+
 			callback && callback(cfg, readItems);
-		}, 'put=' + cfg.name + '.lastread&value=' + encodeURIComponent(JSON.stringify(lastRead)));
+		}, method + '=' + encodeURIComponent(tracker.name) + '&value=' + encodeURIComponent(JSON.stringify(lastRead)));
 	}
 
-	function _button() {
-console.debug('_button');
-		if ( !cfg.headerSelector ) return;
+	function _allButtons() {
+console.debug('_allButton');
+		cfg._buttons = cfg.trackers.map(_allButton);
+		_invoke('buttons', {
+			buttons: cfg._buttons,
+		});
+	}
 
-		var header = document.querySelector(cfg.headerSelector);
-		var button = document.createElement('button');
-		button.textContent = 'Mark all READ';
-		button.className = 'rudie-read-it-button';
-		button.onclick = function() {
-			_save();
+	function _allButton(tracker) {
+		if ( !tracker.all ) return false;
+console.debug('_allButton[' + tracker.name + ']');
+
+		var header = document.querySelector(tracker.all.appendTo);
+
+		var frag = document.createElement('div');
+		frag.innerHTML = tracker.all.html;
+
+		var button = frag.querySelector('.rudie-read-it-all-menu-item');
+		button.onclick = function(e) {
+			e.preventDefault();
+			_save(tracker, null);
 			this.blur();
 		};
 
@@ -254,8 +333,11 @@ console.debug('_button');
 			header.appendChild(button);
 		}
 
-		cfg._button = button;
-		_invoke('button', button);
+		_invoke('button', {
+			tracker: tracker,
+			button: button,
+		});
+		return button;
 	}
 
 	function _listen() {
@@ -274,7 +356,9 @@ console.debug('_listen');
 				}
 			}
 
-			_invoke('listen', match);
+			_invoke('listen', {
+				match: match,
+			});
 
 			if ( match ) {
 				_breakPage();

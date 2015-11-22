@@ -1,0 +1,131 @@
+<!doctype html>
+<html>
+
+<head>
+	<meta charset="utf-8" />
+	<title>Test - blocks</title>
+	<link rel="stylesheet" href="blocks.css" />
+</head>
+
+<body>
+
+<h1>Page title</h1>
+
+<ul id="content" class="content">
+	<li>
+		<h3 data-id="1234">Some title</h3>
+		<p>Some text</p>
+	</li>
+	<li>
+		<h3 data-id="2345">Some title</h3>
+		<p>Some text</p>
+	</li>
+	<li>
+		<h3 data-id="3456">Some title</h3>
+		<p>Some text</p>
+	</li>
+	<li>
+		<h3 data-id="4567">Some title</h3>
+		<p>Some text</p>
+	</li>
+</ul>
+
+<script>
+rudieLastReadConfig = {
+	storeURL: localStorage.rudieReadLastTestStoreURL,
+	store: localStorage.rudieReadLastTestStore,
+
+	listSelector: 'ul.content',
+	itemSelector: 'ul.content li',
+	idItemSelector: 'ul.content li h3',
+	idAttribute: 'data-id',
+	subtree: false,
+
+	trackers: [
+		{
+			name: 'blocks.hide',
+			className: 'hidden',
+			appendTo: 'ul.content li',
+			html: '<button class="rudie-read-it-menu-item hide">X</button>',
+			redundancy: 0,
+		},
+		{
+			name: 'blocks.hilite',
+			className: 'hilited',
+			appendTo: 'ul.content li',
+			notParents: 'a, button',
+			redundancy: 0,
+		},
+	],
+};
+</script>
+<script src="../rudie-read-last.js"></script>
+
+<ul id="more-storage" style="display: none">
+	<div class="page">
+		<li>
+			<h3 data-id="5678">Some title</h3>
+			<p>Some text</p>
+		</li>
+		<li>
+			<h3 data-id="6789">Some title</h3>
+			<p>Some text</p>
+		</li>
+		<li>
+			<h3 data-id="7890">Some title</h3>
+			<p>Some text</p>
+		</li>
+		<li>
+			<h3 data-id="8901">Some title</h3>
+			<p>Some text</p>
+		</li>
+	</div>
+	<div class="page">
+		<li>
+			<h3 data-id="9012">Some title</h3>
+			<p>Some text</p>
+		</li>
+		<li>
+			<h3 data-id="8282">New title</h3>
+			<p>New text</p>
+		</li>
+		<li>
+			<h3 data-id="9823">New title</h3>
+			<p>New text</p>
+		</li>
+		<li>
+			<h3 data-id="7612">New title</h3>
+			<p>New text</p>
+		</li>
+	</div>
+	<div class="page">
+		<li>
+			<h3 data-id="7563">New title</h3>
+			<p>New text</p>
+		</li>
+		<li>
+			<h3 data-id="7896">New title</h3>
+			<p>New text</p>
+		</li>
+	</div>
+</ul>
+
+<p><button id="load-more">^ LOAD MORE ^</button></p>
+
+<script>
+document.querySelector('#load-more').onclick = function(e) {
+	var $page = document.querySelector('#more-storage .page');
+	while ($page.childElementCount) {
+		document.querySelector('#content').appendChild($page.firstElementChild);
+	}
+	$page.remove();
+
+	if ( !document.querySelector('#more-storage .page') ) {
+		this.remove();
+	}
+};
+</script>
+
+</body>
+
+</html>

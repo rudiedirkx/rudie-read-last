@@ -1,0 +1,45 @@
+h1 button {
+	margin-left: 2em;
+	vertical-align: middle;
+}
+
+ul.content {
+	display: flex;
+	flex-wrap: wrap;
+	padding: 0;
+	margin: 0;
+	padding: 10px 0 0 10px;
+	border: solid 2px red;
+}
+ul.rudie-read-it-list {
+	border-color: green;
+}
+li {
+	display: block;
+	width: 200px;
+	height: 200px;
+	padding: 10px;
+	border: solid 2px #d7d7d7;
+	background-color: #f7f7f7;
+	margin: 0 10px 10px 0;
+	position: relative;
+}
+li.rudie-read-it.hidden {
+	border-color: red;
+}
+li.rudie-read-it.hilited {
+	outline: solid 2px green;
+	outline-offset: 1px;
+}
+li > button {
+	position: absolute;
+	top: 10px;
+	right: 10px;
+	cursor: pointer;
+}
+h3 {
+	margin-top: 0;
+}
+h3[data-id]:after {
+	content: " (" attr(data-id) ")";
+}
