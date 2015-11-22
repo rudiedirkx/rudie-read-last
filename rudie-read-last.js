@@ -32,6 +32,7 @@
 				all: {
 					appendTo: 'h1',
 					html: '<button class="rudie-read-it-all-menu-item">Mark ALL read</button>',
+					before: '.some-selector',
 				},
 			},
 			{
@@ -65,7 +66,7 @@
 		}
 	});
 
-	cfg.trackers.forEach(function(tracker) {
+	cfg.trackers && cfg.trackers.forEach(function(tracker) {
 		(['name', 'className', 'appendTo', 'redundancy']).forEach(function(name) {
 			if ( tracker[name] == null ) {
 				fail.push('Config "tracker[' + name + ']" is required.');
@@ -323,11 +324,11 @@ console.debug('_allButton[' + tracker.name + ']');
 			this.blur();
 		};
 
-		if ( cfg.appendButtonBefore === true ) {
+		if ( tracker.all.before === true ) {
 			header.insertBefore(button, header.firstElementChild);
 		}
-		else if ( typeof cfg.appendButtonBefore == 'string' ) {
-			header.insertBefore(button, header.querySelector(cfg.appendButtonBefore));
+		else if ( typeof tracker.all.before == 'string' ) {
+			header.insertBefore(button, header.querySelector(tracker.all.before));
 		}
 		else {
 			header.appendChild(button);
