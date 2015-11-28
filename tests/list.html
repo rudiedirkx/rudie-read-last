@@ -47,11 +47,15 @@ rudieLastReadConfig = {
 	idAttribute: 'data-id',
 	subtree: false,
 
+	menuPocket: {
+		html: '<div class="rudie-read-it-menu-pocket"></div>',
+	},
+
 	trackers: [
 		{
 			name: 'list.seen',
 			className: 'seen',
-			appendTo: 'ul.content li',
+			appendTo: '.rudie-read-it-menu-pocket',
 			html: '<button class="rudie-read-it-menu-item seen">..</button>',
 			redundancy: 6,
 			all: {
@@ -62,11 +66,20 @@ rudieLastReadConfig = {
 		{
 			name: 'list.ignore',
 			className: 'ignored',
-			appendTo: 'ul.content li',
+			appendTo: '.rudie-read-it-menu-pocket',
 			html: '<button class="rudie-read-it-menu-item ignore">X</button>',
 			redundancy: 0,
 		},
 	],
+
+	on: {
+		menu: function(cfg, data) {
+			console.log(data.menuItem);
+		},
+		menus: function(cfg, data) {
+			console.log(data.menuPocket);
+		},
+	}
 };
 </script>
 <script src="../rudie-read-last.js"></script>

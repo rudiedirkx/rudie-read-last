@@ -21,6 +21,12 @@
 		addListClass: 'rudie-read-it-list', // OPTIONAL
 		addPageBreakClass: 'rudie-read-it-page-break', // OPTIONAL
 
+		// OPTIONAL
+		menuPocket: {
+			appendTo: 'ul.content ul.menu', // only add if different from `itemSelector`
+			html: '<ul><li class="rudie-read-it-menu-pocket"></li></ul>',
+		},
+
 		trackers: [
 			{
 				name: 'lastread.seen',
@@ -48,7 +54,8 @@
 		on: {
 			init: Function(cfg),   // AFTER init (after menu & mark)
 			mark: Function(cfg, {tracker, rsp, items}),   // AFTER marking items as read
-			menu: Function(cfg, {tracker, menu}),   // AFTER adding menu items
+			menu: Function(cfg, {tracker, menu[, menuItem]}),   // AFTER adding 1 menu item on 1 item
+			menus: Function(cfg, {item, menuPocket}),   // AFTER adding all menu items on 1 item
 			menuClick: Function(cfg, {tracker, item}),   // AFTER handing menu item click (after sending save)
 			save: Function(cfg, {tracker, rsp, items}),   // when receiving save response
 			button: Function(cfg, {tracker, button}),   // AFTER adding a read-all button
@@ -160,9 +167,38 @@ console.debug('_init');
 
 	function _mark() {
 console.debug('_mark');
+		// Get data, across all items, per tracker
 		cfg.trackers.forEach(function(tracker) {
 			_get(tracker);
-			_menu(tracker);
+		});
+
+		// For every item, create a menu pocket, and per tracker create menu items
+		[].forEach.call(document.querySelectorAll(cfg.itemSelector), function(item) {
+			if ( item.classList.contains('rudie-read-it-menu-items-added') ) return;
+			item.classList.add('rudie-read-it-menu-items-added');
+
+			// Create a menu pocket
+			var menuPocket;
+			if ( cfg.menuPocket ) {
+				var appendTo = cfg.menuPocket.appendTo ? item.querySelector(cfg.menuPocket.appendTo) : item;
+				var frag = document.createElement('div');
+				frag.innerHTML = cfg.menuPocket.html;
+				menuPocket = frag.querySelector('.rudie-read-it-menu-pocket');
+				appendTo.appendChild(menuPocket);
+			}
+
+			// Create 1 menu item per tracker
+			cfg.trackers.forEach(function(tracker) {
+				if ( !tracker.appendTo ) return;
+
+				var menu = item.matches(tracker.appendTo) ? item : item.querySelector(tracker.appendTo);
+				_menu(tracker, menu);
+			});
+
+			_invoke('menus', {
+				item: item,
+				menuPocket: menuPocket,
+			});
 		});
 	}
 
@@ -196,10 +232,7 @@ console.debug('rsp', rsp);
 		});
 	}
 
-	function _menu(tracker) {
-		if ( !tracker.appendTo ) return;
-console.debug('_menu[' + tracker.name + ']');
-
+	function _menu(tracker, menu) {
 		function __save(item) {
 			_save(tracker, item);
 			_invoke('menuClick', {
@@ -208,42 +241,39 @@ console.debug('_menu[' + tracker.name + ']');
 			});
 		}
 
-		[].forEach.call(document.querySelectorAll(tracker.appendTo), function(menu) {
-			if ( menu.classList.contains('rudie-read-it-menu-items-added--' + tracker.className) ) return;
-			menu.classList.add('rudie-read-it-menu-items-added--' + tracker.className);
+		var menuItem;
+		if ( tracker.html ) {
+			var frag = document.createElement('div');
+			frag.innerHTML = tracker.html;
+			menuItem = frag.querySelector('.rudie-read-it-menu-item');
+			menuItem.onclick = function(e) {
+				e.preventDefault();
 
-			if ( tracker.html ) {
-				var frag = document.createElement('div');
-				frag.innerHTML = tracker.html;
-				var menuItem = frag.querySelector('.rudie-read-it-menu-item');
-				menuItem.onclick = function(e) {
-					e.preventDefault();
+				__save(_closest(this, cfg.itemSelector));
+			};
 
-					__save(_closest(this, cfg.itemSelector));
-				};
-
-				var items = menu.children;
-				if ( tracker.position == null || tracker.position >= items.length ) {
-					menu.appendChild(menuItem);
-				}
-				else {
-					menu.insertBefore(menuItem, items[tracker.position]);
-				}
+			var items = menu.children;
+			if ( tracker.position == null || tracker.position >= items.length ) {
+				menu.appendChild(menuItem);
 			}
 			else {
-				menu.addEventListener('click', function(e) {
-					e.preventDefault();
-
-					if ( !_closest(e.target, tracker.notParents) ) {
-						__save(_closest(this, cfg.itemSelector));
-					}
-				});
+				menu.insertBefore(menuItem, items[tracker.position]);
 			}
+		}
+		else {
+			menu.addEventListener('click', function(e) {
+				e.preventDefault();
 
-			_invoke('menu', {
-				tracker: tracker,
-				menu: menu,
+				if ( !_closest(e.target, tracker.notParents) ) {
+					__save(_closest(this, cfg.itemSelector));
+				}
 			});
+		}
+
+		_invoke('menu', {
+			tracker: tracker,
+			menu: menu,
+			menuItem: menuItem,
 		});
 	}
 
@@ -251,9 +281,6 @@ console.debug('_menu[' + tracker.name + ']');
 console.debug('_save[' + tracker.name + ']');
 		var items = [].slice.call(cfg._list.querySelectorAll(cfg.itemSelector));
 		lastReadItem || (lastReadItem = items[0]);
-
-// console.log(lastReadItem);
-// return;
 
 		function mapper(item) {
 			item.classList.add('rudie-read-it');
