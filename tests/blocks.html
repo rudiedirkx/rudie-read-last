@@ -30,10 +30,11 @@
 	</li>
 </ul>
 
+<script src="env.js"></script>
 <script>
 rudieLastReadConfig = {
-	storeURL: localStorage.rudieReadLastTestStoreURL,
-	store: localStorage.rudieReadLastTestStore,
+	storeURL: window.rrl_store_url,
+	store: window.rrl_store,
 
 	listSelector: 'ul.content',
 	itemSelector: 'ul.content li',
@@ -57,6 +58,16 @@ rudieLastReadConfig = {
 			redundancy: 0,
 		},
 	],
+
+	on: {
+		load: function(cfg, data) {
+			console.debug('[custom] Loading "' + data.tracker.name + '"...');
+			console.time('[custom] Loaded "' + data.tracker.name + '".');
+		},
+		unload: function(cfg, data) {
+			console.timeEnd('[custom] Loaded "' + data.tracker.name + '".');
+		},
+	},
 };
 </script>
 <script src="../rudie-read-last.js"></script>

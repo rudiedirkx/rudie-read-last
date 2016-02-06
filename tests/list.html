@@ -36,10 +36,11 @@
 	</div>
 </ul>
 
+<script src="env.js"></script>
 <script>
 rudieLastReadConfig = {
-	storeURL: localStorage.rudieReadLastTestStoreURL,
-	store: localStorage.rudieReadLastTestStore,
+	storeURL: window.rrl_store_url,
+	store: window.rrl_store,
 
 	listSelector: 'ul.content',
 	itemSelector: 'ul.content li',
@@ -74,10 +75,17 @@ rudieLastReadConfig = {
 
 	on: {
 		menu: function(cfg, data) {
-			console.log(data.menuItem);
+			// console.log(data.menuItem);
 		},
 		menus: function(cfg, data) {
-			console.log(data.menuPocket);
+			// console.log(data.menuPocket);
+		},
+		load: function(cfg, data) {
+			console.debug('[custom] Loading "' + data.tracker.name + '"...');
+			console.time('[custom] Loaded "' + data.tracker.name + '".');
+		},
+		unload: function(cfg, data) {
+			console.timeEnd('[custom] Loaded "' + data.tracker.name + '".');
 		},
 	}
 };

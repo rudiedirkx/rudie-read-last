@@ -26,14 +26,15 @@ p {
 	margin-bottom: 0;
 }
 li.rudie-read-it.seen {
-	border-color: #aaa;
+	border-color: #666;
 }
 li.rudie-read-it.seen,
 li.rudie-read-it.seen ~ li {
 	background-color: #e7e7e7;
 }
 li.rudie-read-it.ignored {
-	opacity: 0.3;
+	opacity: 0.6;
+	color: red;
 }
 li > .rudie-read-it-menu-pocket {
 	position: absolute;

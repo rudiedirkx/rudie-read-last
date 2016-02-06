@@ -205,8 +205,8 @@ console.debug('_mark');
 	function _get(tracker) {
 console.debug('_get[' + tracker.name + ']');
 		_ajax(cfg.storeURL + '?' + cfg.storeQuery + '&get=' + encodeURIComponent(tracker.name), 'get', function(rsp, e) {
-console.debug('rsp', rsp);
-			if ( rsp.error || !rsp.exists ) {
+// console.debug('rsp', rsp);
+			if ( rsp.error || !rsp.exists || !rsp.value || !rsp.value.length ) {
 				return;
 			}
 
@@ -279,6 +279,10 @@ console.debug('rsp', rsp);
 
 	function _save(tracker, lastReadItem, callback) {
 console.debug('_save[' + tracker.name + ']');
+		_invoke('load', {
+			tracker: tracker,
+		});
+
 		var items = [].slice.call(cfg._list.querySelectorAll(cfg.itemSelector));
 		lastReadItem || (lastReadItem = items[0]);
 
@@ -310,7 +314,7 @@ console.debug('_save[' + tracker.name + ']');
 			var method = lastReadItem.classList.contains(tracker.className) ? 'push' : 'pull';
 		}
 
-console.debug(method, lastRead);
+console.debug('save:', method, lastRead);
 
 		console.time('SAVED LAST READ');
 		_ajax(cfg.storeURL + '?' + cfg.storeQuery, 'post', function(rsp, e) {
@@ -324,6 +328,10 @@ console.debug(method, lastRead);
 			});
 
 			callback && callback(cfg, readItems);
+
+			_invoke('unload', {
+				tracker: tracker,
+			});
 		}, method + '=' + encodeURIComponent(tracker.name) + '&value=' + encodeURIComponent(JSON.stringify(lastRead)));
 	}
 
