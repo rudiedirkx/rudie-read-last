@@ -16,6 +16,7 @@
 		itemSelector: 'ul.content li',
 		idItemSelector: 'ul.content li h3', // OPTIONAL, default is `itemSelector`
 		idAttribute: 'data-id',
+		idAttributeRegex: /^([a-z]+)/, // OPTIONAL
 		subtree: false, // OPTIONAL
 
 		addListClass: 'rudie-read-it-list', // OPTIONAL
@@ -205,14 +206,14 @@ console.debug('_mark');
 	function _get(tracker) {
 console.debug('_get[' + tracker.name + ']');
 		_ajax(cfg.storeURL + '?' + cfg.storeQuery + '&get=' + encodeURIComponent(tracker.name), 'get', function(rsp, e) {
-// console.debug('rsp', rsp);
 			if ( rsp.error || !rsp.exists || !rsp.value || !rsp.value.length ) {
 				return;
 			}
 
 			var itemSelector = cfg.idItemSelector || cfg.itemSelector;
+			var operator = cfg.idAttributeRegex ? '*=' : '=';
 			var selector = rsp.value.map(function(id) {
-				return itemSelector + '[' + cfg.idAttribute + '="' + id + '"]';
+				return itemSelector + '[' + cfg.idAttribute + operator + '"' + id + '"]';
 			}).join(', ');
 
 			var items = [].slice.call(document.querySelectorAll(selector));
@@ -292,7 +293,14 @@ console.debug('_save[' + tracker.name + ']');
 			if ( cfg.idItemSelector ) {
 				item = item.querySelector(cfg.idItemSelector);
 			}
-			return item.getAttribute(cfg.idAttribute);
+			var attr = item.getAttribute(cfg.idAttribute);
+			if ( cfg.idAttributeRegex ) {
+				var m = attr.match(cfg.idAttributeRegex);
+				if ( m && m[1] ) {
+					attr = m[1];
+				}
+			}
+			return attr;
 		}
 
 		// Overwrite previous list with new list
