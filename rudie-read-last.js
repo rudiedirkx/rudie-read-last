@@ -213,7 +213,9 @@ console.debug('_get[' + tracker.name + ']');
 			var itemSelector = cfg.idItemSelector || cfg.itemSelector;
 			var operator = cfg.idAttributeRegex ? '*=' : '=';
 			var selector = rsp.value.map(function(id) {
-				return itemSelector + '[' + cfg.idAttribute + operator + '"' + id + '"]';
+				return itemSelector.split(/,\s+/g). map(function(subSel) {
+					return subSel + '[' + cfg.idAttribute + operator + '"' + id + '"]';
+				}).join(', ');
 			}).join(', ');
 
 			var items = [].slice.call(document.querySelectorAll(selector));
