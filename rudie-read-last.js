@@ -211,14 +211,22 @@ console.debug('_get[' + tracker.name + ']');
 			}
 
 			var itemSelector = cfg.idItemSelector || cfg.itemSelector;
-			var operator = cfg.idAttributeRegex ? '*=' : '=';
-			var selector = rsp.value.map(function(id) {
-				return itemSelector.split(/,\s+/g). map(function(subSel) {
-					return subSel + '[' + cfg.idAttribute + operator + '"' + id + '"]';
+			var items;
+			if ( cfg.idAttribute == '$text' ) {
+				items = [].filter.call(document.querySelectorAll(itemSelector), function(el) {
+					return rsp.value.indexOf(el.textContent.trim().toLowerCase()) >= 0;
+				});
+			}
+			else {
+				var operator = cfg.idAttributeRegex ? '*=' : '=';
+				var selector = rsp.value.map(function(id) {
+					return itemSelector.split(/,\s+/g). map(function(subSel) {
+						return subSel + '[' + cfg.idAttribute + operator + '"' + id + '"]';
+					}).join(', ');
 				}).join(', ');
-			}).join(', ');
+				items = [].slice.call(document.querySelectorAll(selector));
+			}
 
-			var items = [].slice.call(document.querySelectorAll(selector));
 			items.forEach(function(item, i) {
 				if ( cfg.idItemSelector ) {
 					item = items[i] = _closest(item, cfg.itemSelector);
@@ -295,7 +303,7 @@ console.debug('_save[' + tracker.name + ']');
 			if ( cfg.idItemSelector ) {
 				item = item.querySelector(cfg.idItemSelector);
 			}
-			var attr = item.getAttribute(cfg.idAttribute);
+			var attr = cfg.idAttribute == '$text' ? item.textContent.trim().toLowerCase() : item.getAttribute(cfg.idAttribute);
 			if ( cfg.idAttributeRegex ) {
 				var m = attr.match(cfg.idAttributeRegex);
 				if ( m && m[1] ) {
