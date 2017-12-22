@@ -68,11 +68,15 @@
 
 	// Check required config
 	var fail = [];
-	(['storeURL', 'store', 'listSelector', 'itemSelector', 'idAttribute', 'trackers']).forEach(function(name) {
+	(['storeURL', 'listSelector', 'itemSelector', 'idAttribute', 'trackers']).forEach(function(name) {
 		if ( cfg[name] == null ) {
 			fail.push('Config "' + name + '" is required.');
 		}
 	});
+
+	if ( !cfg.store && cfg.storeURL.indexOf('store=') == -1 ) {
+		fail.push('Config "store" is required, separately or in "storeURL".');
+	}
 
 	cfg.trackers && cfg.trackers.forEach(function(tracker) {
 		(['name', 'className', 'appendTo', 'redundancy']).forEach(function(name) {
@@ -100,7 +104,7 @@
 	cfg.addListClass == null && (cfg.addListClass = 'rudie-read-it-list');
 	cfg.addPageBreakClass == null && (cfg.addPageBreakClass = 'rudie-read-it-page-break');
 
-	cfg.storeQuery = 'store=' + encodeURIComponent(cfg.store);
+	cfg.storeURLWithStore = cfg.storeURL.indexOf('store=') < 0 ? cfg.storeURL + 'store=' + encodeURIComponent(cfg.store) + '&' : cfg.storeURL + '&';
 
 	// Events
 	cfg.on || (cfg.on = {});
@@ -205,7 +209,7 @@ console.debug('_mark');
 
 	function _get(tracker) {
 console.debug('_get[' + tracker.name + ']');
-		_ajax(cfg.storeURL + '?' + cfg.storeQuery + '&get=' + encodeURIComponent(tracker.name), 'get', function(rsp, e) {
+		_ajax(cfg.storeURLWithStore + 'get=' + encodeURIComponent(tracker.name), 'get', function(rsp, e) {
 			if ( rsp.error || !rsp.exists || !rsp.value || !rsp.value.length ) {
 				return;
 			}
@@ -335,7 +339,7 @@ console.debug('_save[' + tracker.name + ']');
 console.debug('save:', method, lastRead);
 
 		console.time('SAVED LAST READ');
-		_ajax(cfg.storeURL + '?' + cfg.storeQuery, 'post', function(rsp, e) {
+		_ajax(cfg.storeURLWithStore, 'post', function(rsp, e) {
 			console.timeEnd('SAVED LAST READ');
 			console.debug('SAVED LAST READ', rsp);
 
