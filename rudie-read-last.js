@@ -414,11 +414,13 @@ console.debug('_listen');
 				}
 			}
 
-			_invoke('listen', {
+			var e = {
 				match: match,
-			});
+				mark: true,
+			};
+			_invoke('listen', e);
 
-			if ( match ) {
+			if ( match && e.mark ) {
 				_breakPage();
 
 				// Wait a while, until the host is definitely done painting
