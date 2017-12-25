@@ -277,9 +277,8 @@ console.debug('_get[' + tracker.name + ']');
 		}
 		else {
 			menu.addEventListener('click', function(e) {
-				e.preventDefault();
-
 				if ( !_closest(e.target, tracker.notParents) ) {
+					e.preventDefault();
 					__save(_closest(this, cfg.itemSelector));
 				}
 			});
