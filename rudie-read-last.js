@@ -62,6 +62,8 @@
 			button: Function(cfg, {tracker, button}),   // AFTER adding a read-all button
 			buttons: Function(cfg, {buttons}),   // AFTER adding all read-all buttons
 			listen: Function(cfg, {match}),   // when the site loads more items
+			load: Function(cfg, {tracker}),   // BEFORE saving
+			unload: Function(cfg, {tracker}),   // AFTER having saved and callbacked
 		},
 	};
 	/**/
