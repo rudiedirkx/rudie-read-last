@@ -410,7 +410,7 @@ console.debug('_listen');
 				var mut = muts[j];
 				for ( var i=0; i<mut.addedNodes.length; i++ ) {
 					var node = mut.addedNodes[i];
-					if ( node.matches(cfg.itemSelector) || node.querySelector(cfg.itemSelector) ) {
+					if ( node.matches && (node.matches(cfg.itemSelector) || node.querySelector(cfg.itemSelector)) ) {
 						match = mut.addedNodes;
 						break;
 					}
