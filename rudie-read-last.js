@@ -402,10 +402,34 @@ console.debug('_allButton[' + tracker.name + ']');
 	function _listen() {
 console.debug('_listen');
 		cfg._list = document.querySelector(cfg.listSelector);
-		var listener;
+		var listener = null;
 		var matches = [];
+		var update = function(name) {
+			return function() {
+				if ( name == 'after' ) {
+					listener = null;
+				}
+
+				if ( !matches.length ) return;
+
+				var e = {
+					match: matches,
+					mark: true,
+				};
+				_invoke('listen', e);
+
+				matches.length = 0;
+
+				if ( e.mark ) {
+					_breakPage();
+
+					// Wait a while, until the host is definitely done painting
+					setTimeout(_mark, 1);
+				}
+			};
+		};
 		var mo = new MutationObserver(function(muts) {
-			var match = false;
+			var match = null;
 			for ( var j=0; j<muts.length; j++ ) {
 				var mut = muts[j];
 				for ( var i=0; i<mut.addedNodes.length; i++ ) {
@@ -422,21 +446,8 @@ console.debug('_listen');
 			}
 
 			clearTimeout(listener);
-			listener = setTimeout(function() {
-				var e = {
-					match: matches,
-					mark: true,
-				};
-				_invoke('listen', e);
-
-				if ( matches.length && e.mark ) {
-					matches = [];
-					_breakPage();
-
-					// Wait a while, until the host is definitely done painting
-					setTimeout(_mark, 1);
-				}
-			}, 200);
+			listener || setTimeout(update('quick'), 300);
+			listener = setTimeout(update('after'), 100);
 		});
 		mo.observe(cfg._list, {childList: true, subtree: !!cfg.subtree});
 
