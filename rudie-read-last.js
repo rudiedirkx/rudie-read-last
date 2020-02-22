@@ -306,7 +306,11 @@ console.debug('_save[' + tracker.name + ']');
 			item.classList.add('rudie-read-it');
 			item.classList.toggle(tracker.className);
 			if ( cfg.idItemSelector ) {
-				item = item.querySelector(cfg.idItemSelector);
+				var subitem = item.querySelector(cfg.idItemSelector);
+				if ( !subitem ) {
+					return;
+				}
+				item = subitem;
 			}
 			var attr = cfg.idAttribute == '$text' ? item.textContent.trim().toLowerCase() : item.getAttribute(cfg.idAttribute);
 			if ( cfg.idAttributeRegex ) {
@@ -326,7 +330,7 @@ console.debug('_save[' + tracker.name + ']');
 
 			var thisIndex = items.indexOf(lastReadItem);
 			var readItems = items.slice(thisIndex, thisIndex + tracker.redundancy);
-			var lastRead = readItems.map(mapper);
+			var lastRead = readItems.map(mapper).filter(x => x != null);
 			var method = 'put';
 		}
 
