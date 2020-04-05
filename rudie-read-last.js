@@ -108,13 +108,16 @@
 
 	cfg.storeURLWithStore = cfg.storeURL.indexOf('store=') < 0 ? cfg.storeURL + 'store=' + encodeURIComponent(cfg.store) + '&' : cfg.storeURL + '&';
 
+	cfg.CACHE_TTL_MINUTES || (cfg.CACHE_TTL_MINUTES = 5);
+	cfg.cache || (cfg.cache = {});
+
 	// Events
 	cfg.on || (cfg.on = {});
 
 	_init();
 
 	function _init() {
-console.debug('_init');
+console.debug('_init...');
 		if ( !cfg.active() ) return;
 
 		_allButtons();
@@ -145,21 +148,18 @@ console.debug('_init');
 	// 	return query.join('&');
 	// }
 
-	function _ajax(url, method, callback, data) {
-		var xhr = new XMLHttpRequest;
-		xhr.open(method, url, true);
-		xhr.onload = function(e) {
-			var rsp = this.responseText.substr(this.getResponseHeader('X-anti-hijack'));
-			try {
+	function _ajax(method, url, data) {
+		return new Promise(resolve => {
+			var xhr = new XMLHttpRequest;
+			xhr.open(method, url, true);
+			xhr.onload = function(e) {
+				var rsp = this.responseText.substr(this.getResponseHeader('X-anti-hijack'));
 				rsp = JSON.parse(rsp);
-			}
-			catch (ex) {
-				return console.error('JSON error from Objective!', ex.message, rsp);
-			}
-			callback.call(this, rsp, e);
-		};
-		data && xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
-		xhr.send(data);
+				resolve(rsp);
+			};
+			data && xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+			xhr.send(data);
+		});
 	}
 
 	function _invoke(event, arg2) {
@@ -173,7 +173,7 @@ console.debug('_init');
 	}
 
 	function _mark() {
-console.debug('_mark');
+console.debug('_mark...');
 		// Get data, across all items, per tracker
 		cfg.trackers.forEach(function(tracker) {
 			_get(tracker);
@@ -210,42 +210,59 @@ console.debug('_mark');
 	}
 
 	function _get(tracker) {
-console.debug('_get[' + tracker.name + ']');
-		_ajax(cfg.storeURLWithStore + 'get=' + encodeURIComponent(tracker.name), 'get', function(rsp, e) {
-			if ( rsp.error || !rsp.exists || !rsp.value || !rsp.value.length ) {
-				return;
-			}
+console.debug('_get [' + tracker.name + ']...');
+		if ( cfg.cache[tracker.name] && cfg.cache[tracker.name].time > Date.now() - cfg.CACHE_TTL_MINUTES * 60 * 1000 ) {
+			const rsp = cfg.cache[tracker.name].value;
+			// console.debug('GOT LAST READ FROM CACHE', rsp);
+			_got(tracker, rsp);
+		}
+		else {
+			const url = cfg.storeURLWithStore + 'get=' + encodeURIComponent(tracker.name);
+			_ajax('GET', url).then(rsp => {
+				// console.debug('GOT FRESJ LAST READ', rsp);
+				cfg.cache[tracker.name] = {
+					time: Date.now(),
+					value: rsp,
+				};
+				_got(tracker, rsp);
+			});
+		}
+	}
 
-			var itemSelector = cfg.idItemSelector || cfg.itemSelector;
-			var items;
-			if ( cfg.idAttribute == '$text' ) {
-				items = [].filter.call(document.querySelectorAll(itemSelector), function(el) {
-					return rsp.value.indexOf(el.textContent.trim().toLowerCase()) >= 0;
-				});
-			}
-			else {
-				var operator = cfg.idAttributeRegex ? '*=' : '=';
-				var selector = rsp.value.map(function(id) {
-					return itemSelector.split(/,\s+/g). map(function(subSel) {
-						return subSel + '[' + cfg.idAttribute + operator + '"' + id + '"]';
-					}).join(', ');
+	function _got(tracker, rsp) {
+		if ( rsp.error || rsp.exists === false || !rsp.value || !rsp.value.length ) {
+			return console.warn('_got invalid response', rsp);
+		}
+
+		var itemSelector = cfg.idItemSelector || cfg.itemSelector;
+		var items;
+		if ( cfg.idAttribute == '$text' ) {
+			items = [].filter.call(document.querySelectorAll(itemSelector), function(el) {
+				return rsp.value.indexOf(el.textContent.trim().toLowerCase()) >= 0;
+			});
+		}
+		else {
+			var operator = cfg.idAttributeRegex ? '*=' : '=';
+			var selector = rsp.value.map(function(id) {
+				return itemSelector.split(/,\s+/g). map(function(subSel) {
+					return subSel + '[' + cfg.idAttribute + operator + '"' + id + '"]';
 				}).join(', ');
-				items = [].slice.call(document.querySelectorAll(selector));
+			}).join(', ');
+			items = [].slice.call(document.querySelectorAll(selector));
+		}
+
+		items.forEach(function(item, i) {
+			if ( cfg.idItemSelector ) {
+				item = items[i] = _closest(item, cfg.itemSelector);
 			}
+			item.classList.add('rudie-read-it');
+			item.classList.add(tracker.className);
+		});
 
-			items.forEach(function(item, i) {
-				if ( cfg.idItemSelector ) {
-					item = items[i] = _closest(item, cfg.itemSelector);
-				}
-				item.classList.add('rudie-read-it');
-				item.classList.add(tracker.className);
-			});
-
-			_invoke('mark', {
-				tracker: tracker,
-				rsp: rsp.value,
-				items: items,
-			});
+		_invoke('mark', {
+			tracker: tracker,
+			rsp: rsp.value,
+			items: items,
 		});
 	}
 
@@ -294,7 +311,7 @@ console.debug('_get[' + tracker.name + ']');
 	}
 
 	function _save(tracker, lastReadItem, callback) {
-console.debug('_save[' + tracker.name + ']');
+console.debug('_save [' + tracker.name + ']...');
 		_invoke('load', {
 			tracker: tracker,
 		});
@@ -344,9 +361,15 @@ console.debug('_save[' + tracker.name + ']');
 console.debug('save:', method, lastRead);
 
 		console.time('SAVED LAST READ');
-		_ajax(cfg.storeURLWithStore, 'post', function(rsp, e) {
+		const data = method + '=' + encodeURIComponent(tracker.name) + '&value=' + encodeURIComponent(JSON.stringify(lastRead));
+		_ajax('POST', cfg.storeURLWithStore, data).then(function(rsp) {
+			cfg.cache[tracker.name] = {
+				time: Date.now(),
+				value: rsp,
+			};
+
 			console.timeEnd('SAVED LAST READ');
-			console.debug('SAVED LAST READ', rsp);
+			// console.debug('SAVED LAST READ', rsp);
 
 			_invoke('save', {
 				tracker: tracker,
@@ -359,11 +382,11 @@ console.debug('save:', method, lastRead);
 			_invoke('unload', {
 				tracker: tracker,
 			});
-		}, method + '=' + encodeURIComponent(tracker.name) + '&value=' + encodeURIComponent(JSON.stringify(lastRead)));
+		});
 	}
 
 	function _allButtons() {
-console.debug('_allButton');
+console.debug('_allButton...');
 		cfg._buttons = cfg.trackers.map(_allButton);
 		_invoke('buttons', {
 			buttons: cfg._buttons,
@@ -372,7 +395,7 @@ console.debug('_allButton');
 
 	function _allButton(tracker) {
 		if ( !tracker.all ) return false;
-console.debug('_allButton[' + tracker.name + ']');
+console.debug('_allButton [' + tracker.name + ']...');
 
 		var header = document.querySelector(tracker.all.appendTo);
 
@@ -404,7 +427,7 @@ console.debug('_allButton[' + tracker.name + ']');
 	}
 
 	function _listen() {
-console.debug('_listen');
+console.debug('_listen...');
 		cfg._list = document.querySelector(cfg.listSelector);
 		var listener = null;
 		var matches = [];
