@@ -210,13 +210,14 @@ console.debug('_mark...');
 	}
 
 	function _get(tracker) {
-console.debug('_get [' + tracker.name + ']...');
 		if ( cfg.cache[tracker.name] && cfg.cache[tracker.name].time > Date.now() - cfg.CACHE_TTL_MINUTES * 60 * 1000 ) {
+console.debug('_get [' + tracker.name + '] CACHED...');
 			const rsp = cfg.cache[tracker.name].value;
 			// console.debug('GOT LAST READ FROM CACHE', rsp);
 			_got(tracker, rsp);
 		}
 		else {
+console.debug('_get [' + tracker.name + '] FRESH...');
 			const url = cfg.storeURLWithStore + 'get=' + encodeURIComponent(tracker.name);
 			_ajax('GET', url).then(rsp => {
 				// console.debug('GOT FRESJ LAST READ', rsp);
@@ -429,31 +430,24 @@ console.debug('_allButton [' + tracker.name + ']...');
 	function _listen() {
 console.debug('_listen...');
 		cfg._list = document.querySelector(cfg.listSelector);
-		var listener = null;
 		var matches = [];
-		var update = function(name) {
-			return function() {
-				if ( name == 'after' ) {
-					listener = null;
-				}
+		var update = function() {
+			if ( !matches.length ) return;
 
-				if ( !matches.length ) return;
-
-				var e = {
-					match: matches,
-					mark: true,
-				};
-				_invoke('listen', e);
-
-				matches.length = 0;
-
-				if ( e.mark ) {
-					_breakPage();
-
-					// Wait a while, until the host is definitely done painting
-					setTimeout(_mark, 1);
-				}
+			var e = {
+				match: matches,
+				mark: true,
 			};
+			_invoke('listen', e);
+
+			matches.length = 0;
+
+			if ( e.mark ) {
+				_breakPage();
+
+				// Wait a while, until the host is definitely done painting
+				setTimeout(_mark, 1);
+			}
 		};
 		var mo = new MutationObserver(function(muts) {
 			var match = null;
@@ -472,9 +466,7 @@ console.debug('_listen...');
 				matches = matches.concat(match);
 			}
 
-			clearTimeout(listener);
-			listener || setTimeout(update('quick'), 300);
-			listener = setTimeout(update('after'), 100);
+			update();
 		});
 		mo.observe(cfg._list, {childList: true, subtree: !!cfg.subtree});
 
