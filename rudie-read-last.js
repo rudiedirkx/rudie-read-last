@@ -116,8 +116,12 @@
 
 	_init();
 
+	function _debug(...args) {
+		cfg.debug && console.debug(...args);
+	}
+
 	function _init() {
-console.debug('_init...');
+_debug('_init...');
 		if ( !cfg.active() ) return;
 
 		_allButtons();
@@ -173,7 +177,7 @@ console.debug('_init...');
 	}
 
 	function _mark() {
-console.debug('_mark...');
+_debug('_mark...');
 		// Get data, across all items, per tracker
 		cfg.trackers.forEach(function(tracker) {
 			_get(tracker);
@@ -211,16 +215,16 @@ console.debug('_mark...');
 
 	function _get(tracker) {
 		if ( cfg.cache[tracker.name] && cfg.cache[tracker.name].time > Date.now() - cfg.CACHE_TTL_MINUTES * 60 * 1000 ) {
-console.debug('_get [' + tracker.name + '] CACHED...');
+_debug('_get [' + tracker.name + '] CACHED...');
 			const rsp = cfg.cache[tracker.name].value;
-			// console.debug('GOT LAST READ FROM CACHE', rsp);
+			// _debug('GOT LAST READ FROM CACHE', rsp);
 			_got(tracker, rsp);
 		}
 		else {
-console.debug('_get [' + tracker.name + '] FRESH...');
+_debug('_get [' + tracker.name + '] FRESH...');
 			const url = cfg.storeURLWithStore + 'get=' + encodeURIComponent(tracker.name);
 			_ajax('GET', url).then(rsp => {
-				// console.debug('GOT FRESJ LAST READ', rsp);
+				// _debug('GOT FRESJ LAST READ', rsp);
 				cfg.cache[tracker.name] = {
 					time: Date.now(),
 					value: rsp,
@@ -312,7 +316,7 @@ console.debug('_get [' + tracker.name + '] FRESH...');
 	}
 
 	function _save(tracker, lastReadItem, callback) {
-console.debug('_save [' + tracker.name + ']...');
+_debug('_save [' + tracker.name + ']...');
 		_invoke('load', {
 			tracker: tracker,
 		});
@@ -359,7 +363,7 @@ console.debug('_save [' + tracker.name + ']...');
 			var method = lastReadItem.classList.contains(tracker.className) ? 'push' : 'pull';
 		}
 
-console.debug('save:', method, lastRead);
+_debug('save:', method, lastRead);
 
 		console.time('SAVED LAST READ');
 		const data = method + '=' + encodeURIComponent(tracker.name) + '&value=' + encodeURIComponent(JSON.stringify(lastRead));
@@ -370,7 +374,7 @@ console.debug('save:', method, lastRead);
 			};
 
 			console.timeEnd('SAVED LAST READ');
-			// console.debug('SAVED LAST READ', rsp);
+			// _debug('SAVED LAST READ', rsp);
 
 			_invoke('save', {
 				tracker: tracker,
@@ -387,7 +391,7 @@ console.debug('save:', method, lastRead);
 	}
 
 	function _allButtons() {
-console.debug('_allButton...');
+_debug('_allButton...');
 		cfg._buttons = cfg.trackers.map(_allButton);
 		_invoke('buttons', {
 			buttons: cfg._buttons,
@@ -396,7 +400,7 @@ console.debug('_allButton...');
 
 	function _allButton(tracker) {
 		if ( !tracker.all ) return false;
-console.debug('_allButton [' + tracker.name + ']...');
+_debug('_allButton [' + tracker.name + ']...');
 
 		var header = document.querySelector(tracker.all.appendTo);
 
@@ -428,7 +432,7 @@ console.debug('_allButton [' + tracker.name + ']...');
 	}
 
 	function _listen() {
-console.debug('_listen...');
+_debug('_listen...');
 		cfg._list = document.querySelector(cfg.listSelector);
 		var matches = [];
 		var update = function() {
