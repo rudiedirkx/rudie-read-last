@@ -253,7 +253,7 @@ _debug('_get [' + tracker.name + '] FRESH...');
 					return subSel + '[' + cfg.idAttribute + operator + '"' + id + '"]';
 				}).join(', ');
 			}).join(', ');
-			items = [].slice.call(document.querySelectorAll(selector));
+			items = selector ? [].slice.call(document.querySelectorAll(selector)) : [];
 		}
 
 		items.forEach(function(item, i) {
@@ -484,7 +484,9 @@ _debug('_listen...');
 	function _breakPage() {
 		if ( cfg.addPageBreakClass ) {
 			var items = [].slice.call(cfg._list.querySelectorAll(cfg.itemSelector));
-			items[items.length-1].classList.add(cfg.addPageBreakClass);
+			if (items.length) {
+				items[items.length-1].classList.add(cfg.addPageBreakClass);
+			}
 		}
 	}
 
