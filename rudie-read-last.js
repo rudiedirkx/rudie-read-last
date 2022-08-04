@@ -100,7 +100,7 @@
 	// Append optional config
 	cfg.active || (cfg.active = function() {
 		var el = document.querySelector(this.listSelector);
-_debug('active', el, el.offsetHeight, el.offsetWidth);
+_debug('active', el, el && el.offsetHeight, el && el.offsetWidth);
 		return el && (el.offsetHeight || el.offsetWidth);
 	});
 	cfg.redundancy || (cfg.redundancy = 4);
