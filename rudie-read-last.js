@@ -203,8 +203,9 @@ _debug('_mark...');
 			cfg.trackers.forEach(function(tracker) {
 				if ( !tracker.appendTo ) return;
 
-				var menu = item.matches(tracker.appendTo) ? item : item.querySelector(tracker.appendTo);
-				_menu(tracker, menu);
+				const menu = item.matches(tracker.appendTo) ? item : item.querySelector(tracker.appendTo);
+				if (menu) _menu(tracker, menu);
+				else console.warn('Item ', item, ' missing menu for tracker ', tracker);
 			});
 
 			_invoke('menus', {
