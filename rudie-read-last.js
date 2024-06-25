@@ -238,7 +238,13 @@ _debug('_get [' + tracker.name + '] FRESH...');
 
 	function _got(tracker, rsp) {
 		if ( rsp.error || rsp.exists === false || !rsp.value || rsp.value.length == undefined ) {
-			return console.warn('_got invalid response', rsp);
+			console.warn('_got invalid response', rsp);
+			_invoke('mark', {
+				tracker: tracker,
+				rsp: [],
+				items: [],
+			});
+			return;
 		}
 
 		var itemSelector = cfg.idItemSelector || cfg.itemSelector;
